@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "aa3c11c9-9085-4398-9e4d-17460995d58e",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "ee8955e8-8279-464a-861b-478bcc599b7b",
+  "prevId": "aa3c11c9-9085-4398-9e4d-17460995d58e",
   "tables": {
     "automation_score": {
       "name": "automation_score",
@@ -44,6 +44,20 @@
           "notNull": false,
           "autoincrement": false,
           "default": "'default'"
+        },
+        "analysis": {
+          "name": "analysis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reasoning": {
+          "name": "reasoning",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",

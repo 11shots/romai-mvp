@@ -2,12 +2,21 @@
 
 const fs = require('fs');
 const path = require('path');
-const { drizzle } = require('drizzle-orm/better-sqlite3');
-const Database = require('better-sqlite3');
+const { drizzle } = require('drizzle-orm/mysql2');
+const { inArray } = require('drizzle-orm');
+const mysql = require('mysql2/promise');
 const schema = require('../src/db/schema');
+require('dotenv').config({ path: '.env.local' });
 
-const sqlite = new Database('./sqlite.db');
-const db = drizzle(sqlite, { schema });
+const connection = mysql.createPool({
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'romai_mvp',
+});
+
+const db = drizzle(connection, { schema, mode: 'default' });
 
 type NewOccupation = typeof schema.occupation.$inferInsert;
 type NewTask = typeof schema.task.$inferInsert;  
@@ -119,19 +128,21 @@ async function importRomeData(filePath: string) {
         description: occ.description || null,
       }));
 
-      // Insert par batch de 100
+      // Insert par batch de 100, en ignorant celles déjà présentes
       for (let i = 0; i < occupationsToInsert.length; i += 100) {
         const batch = occupationsToInsert.slice(i, i + 100);
-        await db.insert(schema.occupation).values(batch).onConflictDoUpdate({
-          target: schema.occupation.codeRome,
-          set: {
-            titre: batch[0].titre,
-            secteur: batch[0].secteur,
-            description: batch[0].description,
-            updatedAt: new Date(),
-          },
-        });
-        console.log(`  ✅ Processed ${Math.min(i + 100, occupationsToInsert.length)}/${occupationsToInsert.length} occupations`);
+        const existing = await db
+          .select({ code: schema.occupation.codeRome })
+          .from(schema.occupation)
+          .where(inArray(schema.occupation.codeRome, batch.map((o) => o.codeRome)));
+        const existingSet = new Set(existing.map((e: { code: string }) => e.code));
+        const toInsert = batch.filter((o) => !existingSet.has(o.codeRome));
+        if (toInsert.length > 0) {
+          await db.insert(schema.occupation).values(toInsert);
+        }
+        console.log(
+          `  ✅ Processed ${Math.min(i + 100, occupationsToInsert.length)}/${occupationsToInsert.length} occupations (inserted ${toInsert.length})`
+        );
       }
     }
 
@@ -145,13 +156,35 @@ async function importRomeData(filePath: string) {
         description: task.description || null,
       }));
 
+      // Nettoyage des tâches existantes pour ces métiers afin d'éviter les doublons
+      const occupationCodes = Array.from(new Set(tasksToInsert.map((t) => t.occupationCodeRome)));
+      if (occupationCodes.length > 0) {
+        const existingTasks = await db
+          .select({ id: schema.task.id })
+          .from(schema.task)
+          .where(inArray(schema.task.occupationCodeRome, occupationCodes));
+        if (existingTasks.length > 0) {
+          const taskIds = existingTasks.map((t: { id: number }) => t.id);
+          await db.delete(schema.automationScore).where(inArray(schema.automationScore.taskId, taskIds));
+          await db.delete(schema.task).where(inArray(schema.task.id, taskIds));
+        }
+      }
+
       // Insert par batch de 100
       for (let i = 0; i < tasksToInsert.length; i += 100) {
         const batch = tasksToInsert.slice(i, i + 100);
-        const insertedTasks = await db.insert(schema.task).values(batch).returning();
+        await db.insert(schema.task).values(batch);
+        
+        // Get the inserted tasks to generate automation scores
+        const insertedTasksQuery = await db.select().from(schema.task)
+          .where(inArray(schema.task.occupationCodeRome, batch.map(t => t.occupationCodeRome)))
+          .orderBy(schema.task.id);
+        
+        // Take the last N tasks (where N = batch.length)
+        const relevantTasks = insertedTasksQuery.slice(-batch.length);
         
         // Générer les scores d'automatisation
-        const automationScores: NewAutomationScore[] = insertedTasks.map((task: any) => ({
+        const automationScores: NewAutomationScore[] = relevantTasks.map((task: any) => ({
           taskId: task.id,
           scorePct: getAutomationScore(task.libelle, task.description || undefined),
           horizon: 'now' as const,
@@ -167,22 +200,20 @@ async function importRomeData(filePath: string) {
     console.log('🎉 Import completed successfully!');
     
     // Statistiques finales
-    const stats = await db.select({
-      occupations: db.$count(schema.occupation),
-      tasks: db.$count(schema.task),
-      scores: db.$count(schema.automationScore),
-    }).from(schema.occupation);
+    const occupationCount = await db.select().from(schema.occupation);
+    const taskCount = await db.select().from(schema.task);
+    const scoreCount = await db.select().from(schema.automationScore);
 
     console.log('📈 Final statistics:');
-    console.log(`  - Occupations: ${stats[0]?.occupations || 0}`);
-    console.log(`  - Tasks: ${stats[0]?.tasks || 0}`);
-    console.log(`  - Automation scores: ${stats[0]?.scores || 0}`);
+    console.log(`  - Occupations: ${occupationCount.length}`);
+    console.log(`  - Tasks: ${taskCount.length}`);
+    console.log(`  - Automation scores: ${scoreCount.length}`);
 
   } catch (error) {
     console.error('❌ Error during import:', error);
     process.exit(1);
   } finally {
-    sqlite.close();
+    await connection.end();
   }
 }
 

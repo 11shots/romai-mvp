@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { occupation, task, automationScore } from '@/db/schema';
-import { sql, like, count, avg } from 'drizzle-orm';
+import { eq, like, or, sql } from 'drizzle-orm';
+
+function normalizeString(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .trim();
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,40 +20,59 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ occupations: [] });
     }
 
-    const searchQuery = `%${query.trim()}%`;
+    // Get all occupations and filter in JavaScript for better accent handling
+    const allOccupations = await db.select().from(occupation);
+    
+    const normalizedQuery = normalizeString(query);
+    
+    const matchingOccupations = allOccupations.filter(occ => {
+      const normalizedTitle = normalizeString(occ.titre);
+      const normalizedCode = normalizeString(occ.codeRome);
+      const normalizedSector = normalizeString(occ.secteur || '');
+      
+      return normalizedTitle.includes(normalizedQuery) ||
+             normalizedCode.includes(normalizedQuery) ||
+             normalizedSector.includes(normalizedQuery);
+    });
 
-    const occupations = await db
-      .select({
-        codeRome: occupation.codeRome,
-        titre: occupation.titre,
-        secteur: occupation.secteur,
-        description: occupation.description,
-        taskCount: count(task.id),
-        avgAutomationScore: sql<number>`COALESCE(AVG(${automationScore.scorePct}), 0)`,
-      })
-      .from(occupation)
-      .leftJoin(task, sql`${task.occupationCodeRome} = ${occupation.codeRome}`)
-      .leftJoin(
-        automationScore,
-        sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
-      )
-      .where(
-        sql`${occupation.titre} LIKE ${searchQuery} OR ${occupation.codeRome} LIKE ${searchQuery}`
-      )
-      .groupBy(occupation.codeRome, occupation.titre, occupation.secteur, occupation.description)
-      .orderBy(sql`${occupation.titre}`)
-      .limit(50);
+
+    // Then get task counts and automation scores for each occupation
+    const enrichedOccupations = [];
+    
+    for (const occ of matchingOccupations) {
+      // Count tasks
+      const taskCount = await db
+        .select({ count: task.id })
+        .from(task)
+        .where(eq(task.occupationCodeRome, occ.codeRome));
+
+      // Calculate average automation score
+      const scores = await db
+        .select({ score: automationScore.scorePct })
+        .from(automationScore)
+        .innerJoin(task, eq(automationScore.taskId, task.id))
+        .where(
+          eq(task.occupationCodeRome, occ.codeRome)
+        );
+
+      const avgScore = scores.length > 0 
+        ? scores.reduce((sum, s) => sum + (s.score || 0), 0) / scores.length
+        : 0;
+
+      enrichedOccupations.push({
+        ...occ,
+        taskCount: taskCount.length,
+        avgAutomationScore: Math.round(avgScore)
+      });
+    }
 
     return NextResponse.json({ 
-      occupations: occupations.map(occ => ({
-        ...occ,
-        avgAutomationScore: Number(occ.avgAutomationScore) || 0
-      })) 
+      occupations: enrichedOccupations
     });
   } catch (error) {
     console.error('Error searching occupations:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     );
   }

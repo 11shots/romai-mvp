@@ -1,49 +1,51 @@
-import { sqliteTable, text, integer, real, primaryKey } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, int, decimal, text, timestamp } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
-export const occupation = sqliteTable('occupation', {
-  codeRome: text('code_rome').primaryKey(),
-  titre: text('titre').notNull(),
-  secteur: text('secteur'),
+export const occupation = mysqlTable('occupation', {
+  codeRome: varchar('code_rome', { length: 10 }).primaryKey(),
+  titre: varchar('titre', { length: 255 }).notNull(),
+  secteur: varchar('secteur', { length: 100 }),
   description: text('description'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-export const task = sqliteTable('task', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  occupationCodeRome: text('occupation_code_rome').notNull().references(() => occupation.codeRome),
-  libelle: text('libelle').notNull(),
+export const task = mysqlTable('task', {
+  id: int('id').primaryKey().autoincrement(),
+  occupationCodeRome: varchar('occupation_code_rome', { length: 10 }).notNull().references(() => occupation.codeRome),
+  libelle: varchar('libelle', { length: 255 }).notNull(),
   description: text('description'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-export const automationScore = sqliteTable('automation_score', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  taskId: integer('task_id').notNull().references(() => task.id),
-  scorePct: real('score_pct').notNull().default(0),
-  horizon: text('horizon').notNull().default('now'), // 'now', '3y', '5y'
-  source: text('source').default('default'), // 'default', 'manual', 'ai_calculated'
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+export const automationScore = mysqlTable('automation_score', {
+  id: int('id').primaryKey().autoincrement(),
+  taskId: int('task_id').notNull().references(() => task.id),
+  scorePct: decimal('score_pct', { precision: 5, scale: 2 }).notNull().default('0'),
+  horizon: varchar('horizon', { length: 10 }).notNull().default('now'), // 'now', '3y', '5y'
+  source: varchar('source', { length: 20 }).default('default'), // 'default', 'manual', 'ai_calculated'
+  analysis: text('analysis'), // Analyse détaillée de la tâche par le LLM
+  reasoning: text('reasoning'), // Justification du score par le LLM
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-export const userProfile = sqliteTable('user_profile', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  email: text('email').notNull().unique(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+export const userProfile = mysqlTable('user_profile', {
+  id: int('id').primaryKey().autoincrement(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-export const userSimulation = sqliteTable('user_simulation', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').references(() => userProfile.id),
-  occupationCodeRome: text('occupation_code_rome').notNull().references(() => occupation.codeRome),
+export const userSimulation = mysqlTable('user_simulation', {
+  id: int('id').primaryKey().autoincrement(),
+  userId: int('user_id').references(() => userProfile.id),
+  occupationCodeRome: varchar('occupation_code_rome', { length: 10 }).notNull().references(() => occupation.codeRome),
   jsonTempsParTache: text('json_temps_par_tache').notNull(), // JSON string with task_id -> hours mapping
-  scoreGlobal: real('score_global').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  scoreGlobal: decimal('score_global', { precision: 5, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
 // Relations

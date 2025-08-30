@@ -14,19 +14,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const simulation = await db
+    const result = await db
       .insert(userSimulation)
       .values({
         userId: null, // For now, we don't have user authentication
         occupationCodeRome,
         jsonTempsParTache: JSON.stringify(timeAllocations),
         scoreGlobal: globalScore,
-      })
-      .returning();
+      });
 
     return NextResponse.json({
       success: true,
-      simulation: simulation[0],
+      simulation: {
+        id: result.insertId,
+        occupationCodeRome,
+        jsonTempsParTache: JSON.stringify(timeAllocations),
+        scoreGlobal: globalScore,
+      },
     });
   } catch (error) {
     console.error('Error saving simulation:', error);
