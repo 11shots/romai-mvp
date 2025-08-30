@@ -1,0 +1,168 @@
+{
+  "occupations": [
+    {
+      "code_rome": "M1805",
+      "titre": "Études et développement informatique",
+      "secteur": "Informatique",
+      "description": "Conception, développement et maintenance d'applications informatiques selon les besoins des utilisateurs et les contraintes techniques des systèmes d'information."
+    },
+    {
+      "code_rome": "D1213",
+      "titre": "Vente en magasin et hypermarchés",
+      "secteur": "Commerce",
+      "description": "Vente d'articles ou de services directement auprès d'une clientèle, accueil et conseil aux clients, gestion des stocks et de la caisse."
+    },
+    {
+      "code_rome": "G1203",
+      "titre": "Management de la sécurité publique",
+      "secteur": "Sécurité publique",
+      "description": "Organisation et coordination des activités de sécurité publique, encadrement des équipes, gestion des situations d'urgence."
+    },
+    {
+      "code_rome": "J1103",
+      "titre": "Médecine généraliste et spécialisée",
+      "secteur": "Santé",
+      "description": "Diagnostic, traitement et suivi médical des patients, prescription de médicaments et soins, coordination avec les spécialistes."
+    },
+    {
+      "code_rome": "E1103",
+      "titre": "Communication",
+      "secteur": "Communication",
+      "description": "Conception et mise en œuvre de stratégies de communication, création de contenus, gestion de la relation presse et des réseaux sociaux."
+    },
+    {
+      "code_rome": "K2111",
+      "titre": "Formation professionnelle",
+      "secteur": "Formation",
+      "description": "Conception et animation de formations professionnelles, évaluation des acquis, accompagnement individuel et collectif des apprenants."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "1",
+      "occupation_code_rome": "M1805",
+      "libelle": "Analyser les besoins fonctionnels et techniques",
+      "description": "Recueillir et analyser les besoins des utilisateurs, définir les spécifications techniques"
+    },
+    {
+      "id": "2",
+      "occupation_code_rome": "M1805",
+      "libelle": "Développer des applications web",
+      "description": "Programmer des applications web en utilisant différents langages et frameworks"
+    },
+    {
+      "id": "3",
+      "occupation_code_rome": "M1805",
+      "libelle": "Tester et déboguer le code",
+      "description": "Effectuer des tests unitaires et d'intégration, corriger les bugs identifiés"
+    },
+    {
+      "id": "4",
+      "occupation_code_rome": "M1805",
+      "libelle": "Maintenir et faire évoluer les applications",
+      "description": "Assurer la maintenance corrective et évolutive des applications existantes"
+    },
+    {
+      "id": "5",
+      "occupation_code_rome": "M1805",
+      "libelle": "Documenter le code et les processus",
+      "description": "Rédiger la documentation technique et utilisateur, maintenir la documentation à jour"
+    },
+    {
+      "id": "6",
+      "occupation_code_rome": "D1213",
+      "libelle": "Accueillir et conseiller les clients",
+      "description": "Recevoir les clients, les renseigner sur les produits et services disponibles"
+    },
+    {
+      "id": "7",
+      "occupation_code_rome": "D1213",
+      "libelle": "Effectuer les transactions de vente",
+      "description": "Encaisser les achats, gérer les moyens de paiement, établir les factures"
+    },
+    {
+      "id": "8",
+      "occupation_code_rome": "D1213",
+      "libelle": "Gérer les stocks et l'approvisionnement",
+      "description": "Contrôler les niveaux de stock, passer les commandes, réceptionner les marchandises"
+    },
+    {
+      "id": "9",
+      "occupation_code_rome": "D1213",
+      "libelle": "Mettre en rayon et présenter les produits",
+      "description": "Disposer les marchandises en rayon, créer des présentations attractives"
+    },
+    {
+      "id": "10",
+      "occupation_code_rome": "G1203",
+      "libelle": "Planifier et organiser les missions",
+      "description": "Définir les objectifs, répartir les tâches, établir les plannings d'intervention"
+    },
+    {
+      "id": "11",
+      "occupation_code_rome": "G1203",
+      "libelle": "Encadrer et former les équipes",
+      "description": "Manager les équipes opérationnelles, assurer la formation continue"
+    },
+    {
+      "id": "12",
+      "occupation_code_rome": "G1203",
+      "libelle": "Coordonner les interventions d'urgence",
+      "description": "Gérer les situations de crise, coordonner les différents services d'intervention"
+    },
+    {
+      "id": "13",
+      "occupation_code_rome": "J1103",
+      "libelle": "Examiner et diagnostiquer les patients",
+      "description": "Effectuer les consultations médicales, poser des diagnostics, prescrire des examens"
+    },
+    {
+      "id": "14",
+      "occupation_code_rome": "J1103",
+      "libelle": "Prescrire et suivre les traitements",
+      "description": "Établir les prescriptions médicamenteuses, assurer le suivi thérapeutique"
+    },
+    {
+      "id": "15",
+      "occupation_code_rome": "J1103",
+      "libelle": "Tenir les dossiers médicaux",
+      "description": "Constituer et mettre à jour les dossiers patients, rédiger les comptes-rendus"
+    },
+    {
+      "id": "16",
+      "occupation_code_rome": "E1103",
+      "libelle": "Élaborer la stratégie de communication",
+      "description": "Définir les objectifs et messages, choisir les canaux de communication appropriés"
+    },
+    {
+      "id": "17",
+      "occupation_code_rome": "E1103",
+      "libelle": "Créer et produire les contenus",
+      "description": "Rédiger, concevoir et produire les supports de communication (textes, visuels, vidéos)"
+    },
+    {
+      "id": "18",
+      "occupation_code_rome": "E1103",
+      "libelle": "Gérer les relations presse",
+      "description": "Entretenir les relations avec les journalistes, organiser des événements presse"
+    },
+    {
+      "id": "19",
+      "occupation_code_rome": "K2111",
+      "libelle": "Concevoir les programmes de formation",
+      "description": "Analyser les besoins, définir les objectifs pédagogiques, structurer les contenus"
+    },
+    {
+      "id": "20",
+      "occupation_code_rome": "K2111",
+      "libelle": "Animer les sessions de formation",
+      "description": "Dispenser les formations, utiliser différentes méthodes pédagogiques, gérer la dynamique de groupe"
+    },
+    {
+      "id": "21",
+      "occupation_code_rome": "K2111",
+      "libelle": "Évaluer les acquis et les formations",
+      "description": "Contrôler les connaissances acquises, mesurer l'efficacité des formations, ajuster les programmes"
+    }
+  ]
+}
