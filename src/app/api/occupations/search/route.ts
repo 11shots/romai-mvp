@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         );
 
       const avgScore = scores.length > 0 
-        ? scores.reduce((sum, s) => sum + (s.score || 0), 0) / scores.length
+        ? scores.reduce((sum, s) => sum + (parseFloat(s.score) || 0), 0) / scores.length
         : 0;
 
       enrichedOccupations.push({
