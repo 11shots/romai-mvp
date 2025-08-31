@@ -8,9 +8,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export const db = new Proxy({} as ReturnType<typeof drizzle>, {
   get(_, prop) {
     if (!_db) {
-      const connectionString = process.env.DATABASE_URL;
+      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
       if (!connectionString) {
-        throw new Error('DATABASE_URL is required');
+        throw new Error('DATABASE_URL or POSTGRES_URL is required');
       }
       const client = postgres(connectionString, { prepare: false });
       _db = drizzle(client, { schema });
