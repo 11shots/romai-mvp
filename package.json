@@ -14,7 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "import-rome": "ts-node scripts/import-rome.ts",
-    "export-rome": "python3 export-rome-data.py",
+    "export-rome": "python3 export-rome-v459.py",
     "migrate-vercel": "node migrate-to-vercel.js"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
     "openai": "^5.16.0",
+    "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",

@@ -18,12 +18,12 @@ def normalize_text(text):
 def export_rome_data():
     """Exporte les données ROME au format JSON"""
     
-    # Vérifier l'existence des fichiers CSV
+    # Vérifier l'existence des fichiers CSV (version 459)
     csv_files = [
-        "unix_referentiel_code_rome_v350.csv",
-        "unix_referentiel_activite_riasec_v350.csv", 
-        "unix_referentiel_competence_v350.csv",
-        "unix_referentiel_env_travail_v350.csv"
+        "../unix_referentiel_code_rome_v459.csv",
+        "../unix_referentiel_activite_riasec_v459.csv", 
+        "../unix_referentiel_competence_v459.csv",
+        "../unix_referentiel_env_travail_v459.csv"
     ]
     
     missing_files = [f for f in csv_files if not Path(f).exists()]
@@ -36,10 +36,10 @@ def export_rome_data():
     
     # Lecture des fichiers
     try:
-        df_rome = pd.read_csv("unix_referentiel_code_rome_v350.csv", encoding='utf-8', sep=';')
-        df_activite = pd.read_csv("unix_referentiel_activite_riasec_v350.csv", encoding='utf-8', sep=';')
-        df_competence = pd.read_csv("unix_referentiel_competence_v350.csv", encoding='utf-8', sep=';')
-        df_env_travail = pd.read_csv("unix_referentiel_env_travail_v350.csv", encoding='utf-8', sep=';')
+        df_rome = pd.read_csv("../unix_referentiel_code_rome_v459.csv", encoding='utf-8', sep=';')
+        df_activite = pd.read_csv("../unix_referentiel_activite_riasec_v459.csv", encoding='utf-8', sep=';')
+        df_competence = pd.read_csv("../unix_referentiel_competence_v459.csv", encoding='utf-8', sep=';')
+        df_env_travail = pd.read_csv("../unix_referentiel_env_travail_v459.csv", encoding='utf-8', sep=';')
     except Exception as e:
         print(f"❌ Erreur lors de la lecture des CSV: {e}")
         return
