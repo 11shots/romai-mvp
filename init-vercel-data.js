@@ -10,7 +10,12 @@ async function initVercelData() {
     process.exit(1);
   }
 
+  // Lire les données JSON
+  const fs = require('fs');
+  const romeData = JSON.parse(fs.readFileSync('rome_data.json', 'utf8'));
+  
   console.log(`🚀 Initialisation des données sur ${API_URL}...`);
+  console.log(`📊 ${romeData.occupations.length} occupations, ${romeData.tasks.length} tâches`);
 
   try {
     const response = await fetch(API_URL, {
@@ -19,6 +24,7 @@ async function initVercelData() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${MIGRATION_SECRET}`,
       },
+      body: JSON.stringify(romeData),
     });
 
     const result = await response.json();

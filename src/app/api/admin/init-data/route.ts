@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, occupation, task } from '@/db/index';
-import romeData from '../../../../../rome_data.json';
+// import romeData from '../../../../../rome_data.json';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Récupérer les données depuis le body de la requête
+    const romeData = await request.json();
+    
     console.log('🚀 Starting data initialization...');
-    console.log(`📊 ${romeData.occupations.length} occupations, ${romeData.tasks.length} tasks`);
+    console.log(`📊 ${romeData.occupations?.length || 0} occupations, ${romeData.tasks?.length || 0} tasks`);
 
     // Batch insert occupations (lots de 100)
     const occupationBatchSize = 100;
