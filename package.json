@@ -16,7 +16,8 @@
     "import-rome": "ts-node scripts/import-rome.ts",
     "export-rome": "python3 export-rome-v459.py",
     "migrate-vercel": "node migrate-to-vercel.js",
-    "init-vercel": "node init-vercel-data.js"
+    "init-vercel": "node init-vercel-data.js",
+    "init-vercel-batch": "node init-vercel-batch.js"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.7",
