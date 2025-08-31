@@ -20,8 +20,8 @@ export interface OccupationAnalysis {
 }
 
 export async function analyzeOccupationTasks(
-  occupation: { codeRome: string; titre: string; secteur?: string; description?: string },
-  tasks: { id: number; libelle: string; description?: string }[]
+  occupation: { codeRome: string; titre: string; secteur?: string | null; description?: string | null },
+  tasks: { id: number; libelle: string; description?: string | null }[]
 ): Promise<OccupationAnalysis> {
   const prompt = `
 Tu es un expert en automatisation des métiers et en intelligence artificielle. Analyse le métier suivant et ses tâches pour déterminer leur potentiel d'automatisation.
