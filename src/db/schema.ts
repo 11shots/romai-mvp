@@ -1,51 +1,51 @@
-import { mysqlTable, varchar, int, decimal, text, timestamp } from 'drizzle-orm/mysql-core';
+import { pgTable, varchar, integer, decimal, text, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const occupation = mysqlTable('occupation', {
+export const occupation = pgTable('occupation', {
   codeRome: varchar('code_rome', { length: 10 }).primaryKey(),
   titre: varchar('titre', { length: 255 }).notNull(),
   secteur: varchar('secteur', { length: 100 }),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const task = mysqlTable('task', {
-  id: int('id').primaryKey().autoincrement(),
+export const task = pgTable('task', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
   occupationCodeRome: varchar('occupation_code_rome', { length: 10 }).notNull().references(() => occupation.codeRome),
   libelle: varchar('libelle', { length: 255 }).notNull(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const automationScore = mysqlTable('automation_score', {
-  id: int('id').primaryKey().autoincrement(),
-  taskId: int('task_id').notNull().references(() => task.id),
+export const automationScore = pgTable('automation_score', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  taskId: integer('task_id').notNull().references(() => task.id),
   scorePct: decimal('score_pct', { precision: 5, scale: 2 }).notNull().default('0'),
   horizon: varchar('horizon', { length: 10 }).notNull().default('now'), // 'now', '3y', '5y'
   source: varchar('source', { length: 20 }).default('default'), // 'default', 'manual', 'ai_calculated'
   analysis: text('analysis'), // Analyse détaillée de la tâche par le LLM
   reasoning: text('reasoning'), // Justification du score par le LLM
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const userProfile = mysqlTable('user_profile', {
-  id: int('id').primaryKey().autoincrement(),
+export const userProfile = pgTable('user_profile', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const userSimulation = mysqlTable('user_simulation', {
-  id: int('id').primaryKey().autoincrement(),
-  userId: int('user_id').references(() => userProfile.id),
+export const userSimulation = pgTable('user_simulation', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  userId: integer('user_id').references(() => userProfile.id),
   occupationCodeRome: varchar('occupation_code_rome', { length: 10 }).notNull().references(() => occupation.codeRome),
   jsonTempsParTache: text('json_temps_par_tache').notNull(), // JSON string with task_id -> hours mapping
   scoreGlobal: decimal('score_global', { precision: 5, scale: 2 }).notNull().default('0'),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // Relations
@@ -83,16 +83,3 @@ export const userSimulationRelations = relations(userSimulation, ({ one }) => ({
     references: [occupation.codeRome],
   }),
 }));
-
-// Types
-export type Occupation = typeof occupation.$inferSelect;
-export type Task = typeof task.$inferSelect;
-export type AutomationScore = typeof automationScore.$inferSelect;
-export type UserProfile = typeof userProfile.$inferSelect;
-export type UserSimulation = typeof userSimulation.$inferSelect;
-
-export type NewOccupation = typeof occupation.$inferInsert;
-export type NewTask = typeof task.$inferInsert;
-export type NewAutomationScore = typeof automationScore.$inferInsert;
-export type NewUserProfile = typeof userProfile.$inferInsert;
-export type NewUserSimulation = typeof userSimulation.$inferInsert;
