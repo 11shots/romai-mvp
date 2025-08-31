@@ -13,7 +13,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "import-rome": "ts-node scripts/import-rome.ts"
+    "import-rome": "ts-node scripts/import-rome.ts",
+    "export-rome": "python3 export-rome-data.py",
+    "migrate-vercel": "node migrate-to-vercel.js"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.7",
