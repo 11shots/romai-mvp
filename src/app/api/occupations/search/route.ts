@@ -57,13 +57,13 @@ export async function GET(request: NextRequest) {
     const metrics = occupationCodes.length > 0 ? await db
       .select({
         codeRome: occupation.codeRome,
-        taskCount: sql<number>`COUNT(DISTINCT CASE WHEN ${task.libelleTypeTexte} = 'definition' THEN ${task.id} END)`,
+        taskCount: sql<number>`COUNT(DISTINCT ${task.id})`,
         avgAutomationScore: sql<number>`
           COALESCE(
             ROUND(
               AVG(
                 CASE 
-                  WHEN ${task.libelleTypeTexte} = 'definition' AND ${automationScore.scorePct} IS NOT NULL 
+                  WHEN ${automationScore.scorePct} IS NOT NULL 
                   THEN CAST(${automationScore.scorePct} AS NUMERIC) 
                 END
               )

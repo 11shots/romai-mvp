@@ -35,7 +35,7 @@ export default function SearchPage() {
     setHasSearched(true);
     
     try {
-      const response = await fetch(`/api/occupations/search?q=${encodeURIComponent(term)}`);
+      const response = await fetch(`/api/occupations/search-simple?q=${encodeURIComponent(term)}`);
       const data = await response.json();
       setOccupations(data.occupations || []);
     } catch (error) {
