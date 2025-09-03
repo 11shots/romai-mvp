@@ -52,7 +52,7 @@ export default function MetierClientComponent({ slug, initialData }: ClientCompo
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`/api/occupations/${slug}/basic`);
+      const response = await fetch(`/api/occupations/${slug}/minimal`);
       const result = await response.json();
 
       if (result.success) {
@@ -90,7 +90,7 @@ export default function MetierClientComponent({ slug, initialData }: ClientCompo
       await fetch(`/api/occupations/${codeRome}/analyze`, { method: 'POST' });
       
       // Recharger les données après analyse
-      const response = await fetch(`/api/occupations/${slug}/basic`);
+      const response = await fetch(`/api/occupations/${slug}/minimal`);
       const result = await response.json();
       if (result.success) {
         const occupationData = {
