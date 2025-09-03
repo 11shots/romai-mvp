@@ -42,20 +42,11 @@ async function getOccupationData(slug: string): Promise<OccupationData | null> {
         .where(eq(occupation.codeRome, slug))
         .limit(1);
     } else {
-      // Recherche par slug (si la colonne existe) ou par titre généré
-      try {
-        occupationData = await db
-          .select()
-          .from(occupation)
-          .where(eq(occupation.slug, slug))
-          .limit(1);
-      } catch (error) {
-        // Si la colonne slug n'existe pas, chercher par titre qui correspond au slug
-        const { generateSlug } = await import('@/lib/utils');
-        const allOccupations = await db.select().from(occupation);
-        const matchingOcc = allOccupations.find(occ => generateSlug(occ.titre) === slug);
-        occupationData = matchingOcc ? [matchingOcc] : [];
-      }
+      // Recherche par slug - toujours utiliser la méthode de fallback en production
+      const { generateSlug } = await import('@/lib/utils');
+      const allOccupations = await db.select().from(occupation);
+      const matchingOcc = allOccupations.find(occ => generateSlug(occ.titre) === slug);
+      occupationData = matchingOcc ? [matchingOcc] : [];
     }
 
     if (occupationData.length === 0) {
