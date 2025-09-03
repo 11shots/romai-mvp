@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const searchTerm = `%${query.toLowerCase()}%`;
 
-    // Recherche optimisée avec PostgreSQL
+    // Recherche ultra-rapide sur la table occupation seulement
     const matchingOccupations = await db
       .select({
         codeRome: occupation.codeRome,
@@ -30,6 +30,33 @@ export async function GET(request: NextRequest) {
         slug: occupation.slug,
         secteur: occupation.secteur,
         description: occupation.description,
+      })
+      .from(occupation)
+      .where(
+        or(
+          sql`${occupation.titre} ILIKE ${searchTerm}`, // Index optimisé
+          sql`to_tsvector('french', ${occupation.titre}) @@ plainto_tsquery('french', ${query})`, // Full-text
+          sql`${occupation.codeRome} ILIKE ${searchTerm.replace('%', '').toUpperCase() + '%'}`, // Code ROME
+          sql`${occupation.secteur} ILIKE ${searchTerm}` // Secteur
+        )
+      )
+      .orderBy(sql`
+        CASE
+          WHEN LOWER(${occupation.titre}) = ${query.toLowerCase()} THEN 1
+          WHEN LOWER(${occupation.titre}) LIKE ${query.toLowerCase() + '%'} THEN 2
+          WHEN ${occupation.codeRome} = ${query.toUpperCase()} THEN 3
+          ELSE 4
+        END,
+        ${occupation.titre}
+      `)
+      .limit(50);
+
+    // Récupérer les métriques seulement pour les résultats trouvés (requête séparée)
+    const occupationCodes = matchingOccupations.map(occ => occ.codeRome);
+    
+    const metrics = occupationCodes.length > 0 ? await db
+      .select({
+        codeRome: occupation.codeRome,
         taskCount: sql<number>`COUNT(DISTINCT CASE WHEN ${task.libelleTypeTexte} = 'definition' THEN ${task.id} END)`,
         avgAutomationScore: sql<number>`
           COALESCE(
@@ -51,42 +78,25 @@ export async function GET(request: NextRequest) {
         automationScore, 
         sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
       )
-      .where(
-        or(
-          sql`LOWER(${occupation.titre}) LIKE ${searchTerm}`,
-          sql`LOWER(${occupation.codeRome}) LIKE ${searchTerm}`,
-          sql`LOWER(${occupation.secteur}) LIKE ${searchTerm}`,
-          sql`${occupation.titre} ILIKE ${searchTerm}`, // Utilise l'index ILIKE
-          sql`to_tsvector('french', ${occupation.titre}) @@ plainto_tsquery('french', ${query})` // Recherche full-text
-        )
-      )
-      .groupBy(
-        occupation.codeRome,
-        occupation.titre,
-        occupation.slug,
-        occupation.secteur,
-        occupation.description
-      )
-      .orderBy(sql`
-        CASE
-          WHEN LOWER(${occupation.titre}) = ${query.toLowerCase()} THEN 1
-          WHEN LOWER(${occupation.titre}) LIKE ${query.toLowerCase() + '%'} THEN 2
-          WHEN ${occupation.codeRome} = ${query.toUpperCase()} THEN 3
-          ELSE 4
-        END,
-        ${occupation.titre}
-      `)
-      .limit(50); // Limiter les résultats pour les performances
+      .where(sql`${occupation.codeRome} = ANY(${occupationCodes})`)
+      .groupBy(occupation.codeRome)
+    : [];
 
-    const enrichedOccupations = matchingOccupations.map(occ => ({
-      codeRome: occ.codeRome,
-      titre: occ.titre,
-      slug: occ.slug,
-      secteur: occ.secteur,
-      description: occ.description,
-      taskCount: Number(occ.taskCount) || 0,
-      avgAutomationScore: Number(occ.avgAutomationScore) || 0
-    }));
+    // Construire le résultat final en associant les métriques
+    const metricsMap = new Map(metrics.map(m => [m.codeRome, m]));
+    
+    const enrichedOccupations = matchingOccupations.map(occ => {
+      const metric = metricsMap.get(occ.codeRome);
+      return {
+        codeRome: occ.codeRome,
+        titre: occ.titre,
+        slug: occ.slug,
+        secteur: occ.secteur,
+        description: occ.description,
+        taskCount: metric ? Number(metric.taskCount) || 0 : 0,
+        avgAutomationScore: metric ? Number(metric.avgAutomationScore) || 0 : 0
+      };
+    });
 
     return NextResponse.json({ 
       occupations: enrichedOccupations
