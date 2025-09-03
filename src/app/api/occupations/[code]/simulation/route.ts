@@ -23,11 +23,12 @@ export async function GET(
       );
     }
 
-    const tasks = await db
+    const allTasks = await db
       .select({
         id: task.id,
         libelle: task.libelle,
         description: task.description,
+        libelleTypeTexte: task.libelleTypeTexte,
         automationScore: sql<number>`COALESCE(${automationScore.scorePct}, 0)`,
       })
       .from(task)
@@ -38,7 +39,10 @@ export async function GET(
       .where(eq(task.occupationCodeRome, code))
       .orderBy(task.libelle);
 
-    const processedTasks = tasks.map(t => ({
+    // Filtrer pour ne garder que les vraies tâches (définitions)
+    const filteredTasks = allTasks.filter(t => t.libelleTypeTexte === 'definition');
+
+    const processedTasks = filteredTasks.map(t => ({
       id: t.id,
       libelle: t.libelle,
       description: t.description,
@@ -75,10 +79,11 @@ export async function POST(
     }
 
     // Get tasks with their automation scores
-    const tasks = await db
+    const allTasks = await db
       .select({
         id: task.id,
         libelle: task.libelle,
+        libelleTypeTexte: task.libelleTypeTexte,
         automationScore: sql<number>`COALESCE(${automationScore.scorePct}, 0)`,
       })
       .from(task)
@@ -87,6 +92,9 @@ export async function POST(
         sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
       )
       .where(eq(task.occupationCodeRome, code));
+
+    // Filtrer pour ne garder que les vraies tâches (définitions)
+    const tasks = allTasks.filter(t => t.libelleTypeTexte === 'definition');
 
     // Calculate automation simulation
     let totalTime = 0;

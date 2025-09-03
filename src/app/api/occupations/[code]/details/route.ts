@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { task, automationScore, occupation } from '@/db/schema';
+import { task, automationScore, occupation as occupationTable } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { analyzeOccupationTasks } from '@/lib/llm-analysis';
 
@@ -11,11 +11,14 @@ export async function GET(
   try {
     const { code } = await params;
 
+    // Déterminer si c'est un code ROME ou un slug
+    const isCodeRome = /^[A-Z]\d{4}$/.test(code);
+    
     // Récupérer les informations du métier
     const occupationData = await db
       .select()
-      .from(occupation)
-      .where(eq(occupation.codeRome, code))
+      .from(occupationTable)
+      .where(isCodeRome ? eq(occupationTable.codeRome, code) : eq(occupationTable.slug, code))
       .limit(1);
 
     if (occupationData.length === 0) {
@@ -25,12 +28,15 @@ export async function GET(
       );
     }
 
-    // Récupérer les tâches avec leurs scores d'automatisation
-    const tasks = await db
+    const occupation = occupationData[0];
+
+    // Récupérer les tâches avec leurs scores d'automatisation (en évitant les doublons)
+    const allTasks = await db
       .select({
         id: task.id,
         libelle: task.libelle,
         description: task.description,
+        libelleTypeTexte: task.libelleTypeTexte,
         automationScore: sql<number>`COALESCE(${automationScore.scorePct}, NULL)`,
         analysis: automationScore.analysis,
         reasoning: automationScore.reasoning,
@@ -41,19 +47,35 @@ export async function GET(
         automationScore,
         sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
       )
-      .where(eq(task.occupationCodeRome, code))
+      .where(eq(task.occupationCodeRome, occupation.codeRome))
       .orderBy(task.libelle);
+
+    // Filtrer pour ne garder que les vraies tâches (définitions)
+    const realTasks = allTasks.filter(t => t.libelleTypeTexte === 'definition');
+
+    // Dédupliquer les tâches par libellé
+    const tasks = realTasks.reduce((acc, current) => {
+      const existingTask = acc.find(t => t.libelle === current.libelle);
+      if (!existingTask) {
+        acc.push(current);
+      } else if (current.automationScore && !existingTask.automationScore) {
+        // Si la tâche actuelle a un score et l'existante n'en a pas, remplacer
+        const index = acc.indexOf(existingTask);
+        acc[index] = current;
+      }
+      return acc;
+    }, [] as typeof realTasks);
 
     // Vérifier si on a besoin de faire une analyse LLM
     // Une analyse LLM est considérée comme existante si au moins une tâche a une analysis non-null
     const hasLLMAnalysis = tasks.some(t => t.analysis && t.analysis.trim().length > 0);
     
-    console.log(`[${code}] Analyse LLM existante: ${hasLLMAnalysis}, Tâches: ${tasks.length}`);
+    console.log(`[${occupation.codeRome}] Analyse LLM existante: ${hasLLMAnalysis}, Tâches: ${tasks.length}`);
     
     if (!hasLLMAnalysis && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
       // Déclencher l'analyse LLM en arrière-plan
       try {
-        console.log(`Démarrage de l'analyse LLM pour ${code}...`);
+        console.log(`Démarrage de l'analyse LLM pour ${occupation.codeRome}...`);
         
         const tasksForAnalysis = tasks.map(t => ({
           id: t.id,
@@ -61,7 +83,7 @@ export async function GET(
           description: t.description || undefined
         }));
 
-        const analysis = await analyzeOccupationTasks(occupationData[0], tasksForAnalysis);
+        const analysis = await analyzeOccupationTasks(occupation, tasksForAnalysis);
         
         // Sauvegarder les résultats dans la base
         for (const taskAnalysis of analysis.tasks) {
@@ -94,7 +116,7 @@ export async function GET(
           }
         }
         
-        console.log(`Analyse LLM terminée pour ${code}`);
+        console.log(`Analyse LLM terminée pour ${occupation.codeRome}`);
         
         // Recharger les données avec les nouveaux scores
         const updatedTasks = await db
@@ -111,7 +133,7 @@ export async function GET(
             automationScore,
             sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
           )
-          .where(eq(task.occupationCodeRome, code))
+          .where(eq(task.occupationCodeRome, occupation.codeRome))
           .orderBy(task.libelle);
 
         const processedTasks = updatedTasks.map(t => ({
@@ -125,7 +147,7 @@ export async function GET(
 
         return NextResponse.json({ 
           success: true,
-          occupation: occupationData[0],
+          occupation: occupation,
           tasks: processedTasks,
           llmAnalysis: {
             summary: analysis.summary,
@@ -151,7 +173,7 @@ export async function GET(
 
     return NextResponse.json({ 
       success: true,
-      occupation: occupationData[0],
+      occupation: occupation,
       tasks: processedTasks
     });
   } catch (error) {

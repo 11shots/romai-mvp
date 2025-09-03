@@ -11,6 +11,7 @@ import { Search, ArrowRight } from 'lucide-react';
 interface Occupation {
   codeRome: string;
   titre: string;
+  slug?: string;
   secteur: string | null;
   description: string | null;
   taskCount: number;
@@ -168,7 +169,7 @@ export default function SearchPage() {
                             Simuler
                           </Button>
                         </Link>
-                        <Link href={`/metier/${occupation.codeRome}`}>
+                        <Link href={`/metier/${occupation.slug || occupation.codeRome}`}>
                           <Button size="sm" className="flex items-center gap-1">
                             Voir détails
                             <ArrowRight className="w-4 h-4" />

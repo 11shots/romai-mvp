@@ -166,19 +166,19 @@ export default function SimulatePage({ params }: { params: { code: string } }) {
   };
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold">
+            <Link href="/" className="text-2xl font-bold text-blue-600">
               ROME AI
             </Link>
             <div className="flex gap-4">
-              <Link href="/search">
-                <Button variant="outline">Rechercher</Button>
+              <Link href="/search" className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Rechercher
               </Link>
-              <Link href="/compare">
-                <Button variant="outline">Comparer</Button>
+              <Link href="/compare" className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Comparer
               </Link>
             </div>
           </nav>
@@ -186,68 +186,64 @@ export default function SimulatePage({ params }: { params: { code: string } }) {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Link href={`/metier/${simulationData.occupation.codeRome}`} className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour au métier
+          </Link>
+        </div>
+        
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <Link href={`/metier/${simulationData.occupation.codeRome}`}>
-              <Button variant="ghost" className="mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour au métier
-              </Button>
-            </Link>
-          </div>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
-              <BarChart3 className="w-8 h-8" />
-              Simulateur d'automatisation
-            </h1>
-            <h2 className="text-xl text-muted-foreground mb-4">
-              {simulationData.occupation.titre}
-            </h2>
-            <p className="text-muted-foreground">
+          {/* En-tête du simulateur */}
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <BarChart3 className="w-8 h-8 text-blue-600" />
+                  Simulateur d'automatisation
+                </h1>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                  {simulationData.occupation.titre}
+                </h2>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span>Code ROME: <strong>{simulationData.occupation.codeRome}</strong></span>
+                  {simulationData.occupation.secteur && (
+                    <Badge variant="secondary">{simulationData.occupation.secteur}</Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <div className="text-2xl font-bold text-gray-900">
+                  {Math.round(weightedScore)}%
+                </div>
+                <div className={`text-sm font-medium ${getAutomationColor(weightedScore)}`}>
+                  Automatisation {getAutomationText(weightedScore).toLowerCase().replace('automatisation ', '')}
+                </div>
+                <Progress value={weightedScore} className="w-20 mt-2" />
+              </div>
+            </div>
+            
+            <p className="text-gray-700 leading-relaxed">
               Ajustez le temps que vous consacrez à chaque tâche pour voir l'impact 
               sur votre potentiel d'automatisation personnalisé.
             </p>
           </div>
 
           <div className="grid gap-6 mb-8">
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Score d'automatisation personnalisé</span>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Répartition du temps de travail
+                  </div>
                   <Button onClick={saveSimulation} size="sm" className="flex items-center gap-1">
                     <Save className="w-4 h-4" />
                     Sauvegarder
                   </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <Progress value={weightedScore} className="mb-2 h-3" />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>0%</span>
-                    <span className={`text-lg font-semibold ${getAutomationColor(weightedScore)}`}>
-                      {Math.round(weightedScore)}%
-                    </span>
-                    <span>100%</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <Badge variant="outline" className={getAutomationColor(weightedScore)}>
-                    {getAutomationText(weightedScore)}
-                  </Badge>
-                  <span className="text-muted-foreground">
-                    Basé sur {currentTotal}h de travail hebdomadaire
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Répartition du temps de travail
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -273,47 +269,56 @@ export default function SimulatePage({ params }: { params: { code: string } }) {
                   </Button>
                 </div>
                 
-                <div className="text-sm text-muted-foreground mb-4">
-                  Temps actuellement alloué: {currentTotal}h 
+                <div className="text-sm text-gray-600 mb-4">
+                  Temps actuellement alloué: <strong>{currentTotal}h</strong>
                   {currentTotal !== totalHours && (
                     <span className="text-yellow-600">
                       {" "}(différence de {Math.abs(currentTotal - totalHours)}h)
                     </span>
                   )}
                 </div>
+                <div className="text-xs text-gray-500">
+                  Basé sur {currentTotal}h de travail hebdomadaire
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold">
-              Tâches du métier ({simulationData.tasks.length})
-            </h3>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Tâches du métier ({simulationData.tasks.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
             
             {simulationData.tasks.map((task) => {
               const taskTime = timeAllocations[task.id] || 0;
               const taskPercentage = currentTotal > 0 ? (taskTime / currentTotal) * 100 : 0;
               
               return (
-                <Card key={task.id}>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 mr-4">
-                          <h4 className="font-semibold text-lg mb-2">{task.libelle}</h4>
-                          {task.description && (
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {task.description}
-                            </p>
-                          )}
-                        </div>
-                        <Badge 
-                          variant="outline"
-                          className={getAutomationColor(task.automationScore)}
-                        >
-                          {Math.round(task.automationScore)}% automatisable
-                        </Badge>
+                <div key={task.id} className="border-l-4 border-gray-200 pl-4 py-3">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 mr-4">
+                        <h4 className="font-medium text-gray-900 mb-1">{task.libelle}</h4>
+                        {task.description && (
+                          <p className="text-sm text-gray-600 mb-2">
+                            {task.description}
+                          </p>
+                        )}
                       </div>
+                      <div className="ml-4 text-right">
+                        <div className={`text-lg font-bold ${getAutomationColor(task.automationScore)}`}>
+                          {Math.round(task.automationScore)}%
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          automatisable
+                        </div>
+                      </div>
+                    </div>
                       
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -338,28 +343,31 @@ export default function SimulatePage({ params }: { params: { code: string } }) {
                         
                         <Progress value={task.automationScore} className="h-2" />
                         
-                        <div className="flex justify-between text-xs text-muted-foreground">
+                        <div className="flex justify-between text-xs text-gray-500">
                           <span>Impact sur votre temps: {Math.round(taskTime * task.automationScore / 100 * 10) / 10}h automatisables</span>
                           <span>{getAutomationText(task.automationScore)}</span>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
               );
             })}
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {simulationData.tasks.length === 0 && (
-            <div className="text-center py-12">
-              <BarChart3 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">
-                Aucune tâche disponible pour ce métier
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Les données seront bientôt disponibles après import du référentiel ROME
-              </p>
-            </div>
+            <Card>
+              <CardContent className="text-center py-12">
+                <BarChart3 className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-lg text-gray-500">
+                  Aucune tâche disponible pour ce métier
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Les données seront bientôt disponibles après import du référentiel ROME
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </main>

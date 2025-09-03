@@ -4,6 +4,7 @@ import { relations } from 'drizzle-orm';
 export const occupation = pgTable('occupation', {
   codeRome: varchar('code_rome', { length: 10 }).primaryKey(),
   titre: varchar('titre', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 150 }).notNull().unique(),
   secteur: varchar('secteur', { length: 100 }),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -15,6 +16,7 @@ export const task = pgTable('task', {
   occupationCodeRome: varchar('occupation_code_rome', { length: 10 }).notNull().references(() => occupation.codeRome),
   libelle: varchar('libelle', { length: 255 }).notNull(),
   description: text('description'),
+  libelleTypeTexte: varchar('libelle_type_texte', { length: 50 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
