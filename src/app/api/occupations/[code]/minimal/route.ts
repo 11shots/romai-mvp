@@ -43,6 +43,45 @@ export async function GET(
 
     const occupation = occupationData[0];
 
+    // Récupérer les tâches avec requête SQL directe
+    let tasks = [];
+    try {
+      const tasksResult = await db.execute(sql`
+        SELECT t.id, t.libelle, t.description,
+               COALESCE(CAST(a.score_pct AS NUMERIC), 0) as automation_score,
+               a.analysis, a.reasoning
+        FROM task t
+        LEFT JOIN automation_score a ON a.task_id = t.id AND a.horizon = 'now'
+        WHERE t.occupation_code_rome = ${occupation.code_rome}
+        ORDER BY t.libelle
+      `);
+      
+      // Filtrer les vraies tâches
+      const realTasks = tasksResult.filter(t => {
+        const libelle = t.libelle.toLowerCase();
+        return !libelle.includes('emploi est accessible') &&
+               !libelle.includes('diplôme') &&
+               !libelle.includes('formation') &&
+               !libelle.includes('expérience') &&
+               !libelle.includes('niveau bac') &&
+               !libelle.includes('capa') &&
+               !libelle.includes('certificat') &&
+               !libelle.includes('recommandée') &&
+               libelle.length > 20;
+      });
+
+      tasks = realTasks.map(t => ({
+        id: t.id,
+        libelle: t.libelle,
+        automationScore: Number(t.automation_score) || undefined,
+        analysis: t.analysis,
+        reasoning: t.reasoning,
+      }));
+    } catch (taskError) {
+      console.log('Task loading failed, returning empty array:', taskError);
+      tasks = [];
+    }
+
     return NextResponse.json({ 
       success: true,
       occupation: {
@@ -52,7 +91,7 @@ export async function GET(
         secteur: occupation.secteur,
         description: occupation.description,
       },
-      tasks: [] // Temporairement vide pour éviter les problèmes
+      tasks
     });
   } catch (error) {
     console.error('Minimal API error:', error);
