@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { occupation, task, automationScore } from '@/db/schema';
 import { eq, like, or, sql } from 'drizzle-orm';
+import { generateSlug } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
         return {
           codeRome: occ.codeRome,
           titre: occ.titre,
-          slug: occ.codeRome, // Utilise codeRome comme slug temporaire
+          slug: generateSlug(occ.titre), // Génère un slug SEO-friendly à partir du titre
           secteur: occ.secteur,
           description: occ.description,
           taskCount: Number(taskCount[0]?.count) || 0,

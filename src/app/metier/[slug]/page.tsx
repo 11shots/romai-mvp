@@ -32,12 +32,31 @@ async function getOccupationData(slug: string): Promise<OccupationData | null> {
     // Déterminer si c'est un code ROME ou un slug
     const isCodeRome = /^[A-Z]\d{4}$/.test(slug);
     
-    // Récupérer les informations du métier
-    const occupationData = await db
-      .select()
-      .from(occupation)
-      .where(isCodeRome ? eq(occupation.codeRome, slug) : eq(occupation.slug, slug))
-      .limit(1);
+    let occupationData;
+    
+    if (isCodeRome) {
+      // Recherche par code ROME
+      occupationData = await db
+        .select()
+        .from(occupation)
+        .where(eq(occupation.codeRome, slug))
+        .limit(1);
+    } else {
+      // Recherche par slug (si la colonne existe) ou par titre généré
+      try {
+        occupationData = await db
+          .select()
+          .from(occupation)
+          .where(eq(occupation.slug, slug))
+          .limit(1);
+      } catch (error) {
+        // Si la colonne slug n'existe pas, chercher par titre qui correspond au slug
+        const { generateSlug } = await import('@/lib/utils');
+        const allOccupations = await db.select().from(occupation);
+        const matchingOcc = allOccupations.find(occ => generateSlug(occ.titre) === slug);
+        occupationData = matchingOcc ? [matchingOcc] : [];
+      }
+    }
 
     if (occupationData.length === 0) {
       return null;
@@ -87,10 +106,14 @@ async function getOccupationData(slug: string): Promise<OccupationData | null> {
       ? scoresWithValues.reduce((sum, t) => sum + Number(t.automationScore), 0) / scoresWithValues.length
       : undefined;
 
+    // Générer un slug si nécessaire
+    const { generateSlug } = await import('@/lib/utils');
+    const finalSlug = occ.slug || generateSlug(occ.titre);
+
     return {
       codeRome: occ.codeRome,
       titre: occ.titre,
-      slug: occ.slug || slug,
+      slug: finalSlug,
       secteur: occ.secteur,
       description: occ.description,
       tasks: uniqueTasks.map(t => ({
