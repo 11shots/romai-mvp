@@ -39,23 +39,51 @@ export async function GET(
 
     const occupation = occupationData[0];
 
-    // Récupérer toutes les tâches (sans filtrage complexe pour éviter les erreurs)
-    const allTasks = await db
-      .select({
-        id: task.id,
-        libelle: task.libelle,
-        description: task.description,
-        automationScore: sql<number>`COALESCE(${automationScore.scorePct}, NULL)`,
-        analysis: automationScore.analysis,
-        reasoning: automationScore.reasoning,
-      })
-      .from(task)
-      .leftJoin(
-        automationScore,
-        sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
-      )
-      .where(eq(task.occupationCodeRome, occupation.codeRome))
-      .orderBy(task.libelle);
+    // Récupérer les tâches de manière très conservative
+    let allTasks = [];
+    try {
+      // Essayer d'abord avec automation_score
+      allTasks = await db
+        .select({
+          id: task.id,
+          libelle: task.libelle,
+          description: task.description,
+          automationScore: sql<number>`COALESCE(${automationScore.scorePct}, NULL)`,
+          analysis: automationScore.analysis,
+          reasoning: automationScore.reasoning,
+        })
+        .from(task)
+        .leftJoin(
+          automationScore,
+          sql`${automationScore.taskId} = ${task.id} AND ${automationScore.horizon} = 'now'`
+        )
+        .where(eq(task.occupationCodeRome, occupation.codeRome))
+        .orderBy(task.libelle);
+    } catch (error) {
+      console.log('Automation score join failed, trying without:', error);
+      try {
+        // Fallback sans automation_score si la table n'existe pas
+        const basicTasks = await db
+          .select({
+            id: task.id,
+            libelle: task.libelle,
+            description: task.description,
+          })
+          .from(task)
+          .where(eq(task.occupationCodeRome, occupation.codeRome))
+          .orderBy(task.libelle);
+        
+        allTasks = basicTasks.map(t => ({
+          ...t,
+          automationScore: null,
+          analysis: null,
+          reasoning: null,
+        }));
+      } catch (basicError) {
+        console.error('Even basic task query failed:', basicError);
+        allTasks = [];
+      }
+    }
 
     // Filtrage simple côté JavaScript
     const realTasks = allTasks.filter(t => {
