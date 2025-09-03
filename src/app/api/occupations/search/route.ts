@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       .select({
         codeRome: occupation.codeRome,
         titre: occupation.titre,
-        slug: occupation.slug,
+        slug: sql<string>`COALESCE(${occupation.slug}, ${occupation.codeRome})`.as('slug'), // Fallback si slug n'existe pas
         secteur: occupation.secteur,
         description: occupation.description,
       })
